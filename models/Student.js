@@ -2,13 +2,13 @@ const mongoose = require("mongoose");
 
 const studentSchema = new mongoose.Schema({
   fullName: String,
-  phone: String,
+  phone: Number,
   email: String,
   permanentAddress: String,
   temporaryAddress: String,
   dateOfBirth: Date,
   educationStatus: String,
-  roomNumber: String,
+  roomNumber: Number,
   moveInStatus: {
     type: String,
     default: "pending"
