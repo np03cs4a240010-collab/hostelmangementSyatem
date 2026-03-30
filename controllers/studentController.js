@@ -12,8 +12,8 @@ exports.addStudent = async (req, res) => {
   try {
     const student = new Student(req.body);
 
-    // default booking status
     student.bookingStatus = "Pending";
+    student.approvedBy = null;
 
     await student.save();
     res.json(student);
@@ -39,21 +39,30 @@ exports.deleteStudent = async (req, res) => {
   res.json({ message: "Deleted successfully" });
 };
 
+// ================= VIEW ALL BOOKINGS (OWNER) =================
+exports.getAllBookings = async (req, res) => {
+  const students = await Student.find().populate("room");
+  res.json(students);
+};
+
 // ================= APPROVE BOOKING =================
 exports.approveStudent = async (req, res) => {
   try {
+    const { role } = req.body; // "owner" or "warden"
+
     const student = await Student.findById(req.params.id);
 
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    // already approved check
-    if (student.bookingStatus === "Approved") {
-      return res.json({ message: "Already approved" });
+    // ❌ already actioned
+    if (student.bookingStatus !== "Pending") {
+      return res.json({
+        message: `Already actioned by ${student.approvedBy}`
+      });
     }
 
-    // find room
     const room = await Room.findById(student.room);
 
     if (!room) {
@@ -67,25 +76,56 @@ exports.approveStudent = async (req, res) => {
 
     // ✅ approve student
     student.bookingStatus = "Approved";
+    student.approvedBy = role;
+
     await student.save();
 
     // ✅ update room
     room.occupiedSeats += 1;
 
-    // 🔥 MAIN LOGIC (your requirement)
+    // 🔥 MAIN LOGIC
     room.seatsLeft = room.totalSeats - room.occupiedSeats;
 
-    if (room.seatsLeft === 0) {
-      room.status = "Full";
-    } else {
-      room.status = "Available";
-    }
+    room.status = room.seatsLeft === 0 ? "Full" : "Available";
 
     await room.save();
 
     res.json({
-      message: "Student approved & room updated",
+      message: `Student approved by ${role}`,
       room
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ================= REJECT BOOKING =================
+exports.rejectStudent = async (req, res) => {
+  try {
+    const { role } = req.body;
+
+    const student = await Student.findById(req.params.id);
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    // ❌ already actioned
+    if (student.bookingStatus !== "Pending") {
+      return res.json({
+        message: `Already actioned by ${student.approvedBy}`
+      });
+    }
+
+    // ✅ reject
+    student.bookingStatus = "Rejected";
+    student.approvedBy = role;
+
+    await student.save();
+
+    res.json({
+      message: `Student rejected by ${role}`
     });
 
   } catch (error) {

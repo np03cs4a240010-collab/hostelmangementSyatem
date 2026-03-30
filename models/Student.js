@@ -12,7 +12,24 @@ const studentSchema = new mongoose.Schema({
   moveInStatus: {
     type: String,
     default: "pending"
+  },
+  bookingStatus: {
+    type: String,
+    default: "Pending"
+  },
+  approvedBy: {
+    type: String, // "warden" or "owner"
+    default: null
+  },
+  room: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Room"
+  },
+  bookingStatus: {
+    type: String,
+    default: "Pending"
   }
+  
 });
 
 module.exports = mongoose.model("Student", studentSchema);
