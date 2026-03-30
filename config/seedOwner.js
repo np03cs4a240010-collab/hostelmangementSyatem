@@ -1,4 +1,4 @@
-const User = require("../models/User");
+const User = require("../models/User.");
 
 const seedOwner = async () => {
   const existing = await User.findOne({ email: "owner@gmail.com" });
