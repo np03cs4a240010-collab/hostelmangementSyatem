@@ -10,12 +10,33 @@ exports.getStudents = async (req, res) => {
 // ================= ADD =================
 exports.addStudent = async (req, res) => {
   try {
+    const { email } = req.body;
+
+    // 🔍 Check existing student with same email
+    const existingStudent = await Student.findOne({ email });
+
+    if (existingStudent) {
+      // ❌ Block if Pending or Approved
+      if (
+        existingStudent.bookingStatus === "Pending" ||
+        existingStudent.bookingStatus === "Approved"
+      ) {
+        return res.status(400).json({
+          message: "A booking request from this email address already exists."
+        });
+      }
+
+      // ✅ Allow if Rejected (we will delete old record or reuse)
+    }
+
+    // ✅ Create new student
     const student = new Student(req.body);
 
     student.bookingStatus = "Pending";
     student.approvedBy = null;
 
     await student.save();
+
     res.json(student);
 
   } catch (error) {
